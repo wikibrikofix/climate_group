@@ -1,7 +1,9 @@
 # climate_group
 
-STATUS: [UN-MAINTAINED]. Due to personal reasons I am not using this integration anymore. I do not have the time to actively maintain it. Feel free to fork/take-over. 
-I had made in try to get it merged into home assistant: https://github.com/home-assistant/core/pull/77737 but never got around to finish it. 
+STATUS: [workaround]
++ forked from @daenny (https://github.com/daenny/climate_group)
++ made some changes to make it work for me, as there was a problem with Home Assistant core 2024.1.0
+
 
 Home Assistant Climate Group
 
@@ -11,7 +13,7 @@ Inspired/copied from light_group component (https://github.com/home-assistant/ho
 ## How to install:
 
 ### HACS
-Add this repo (https://github.com/daenny/climate_group) to the HACS store and install from there.
+Add this repo (https://github.com/bjrnptrsn/climate_group) to the HACS store and install from there.
 
 ### local install
 Put in "custom_components" folder located in hass.io inside the config folder.
