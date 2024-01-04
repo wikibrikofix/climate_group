@@ -11,7 +11,7 @@ from homeassistant.components.climate import (
     ATTR_CURRENT_TEMPERATURE,
     ATTR_FAN_MODE,
     ATTR_FAN_MODES,
-    ATTR_HVAC_ACTION,
+    # ATTR_HVAC_ACTION,
     ATTR_HVAC_MODE,
     ATTR_HVAC_MODES,
     ATTR_MAX_TEMP,
@@ -154,7 +154,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         self._attr_supported_features = 0
         self._attr_hvac_modes = [HVACMode.OFF]
         self._attr_hvac_mode = None
-        self._attr_hvac_action = None
+        # self._attr_hvac_action = None
 
         self._attr_swing_modes = None
         self._attr_swing_mode = None
@@ -234,23 +234,24 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             self._attr_hvac_mode = max(set(current_hvac_modes), key=current_hvac_modes.count)
         # return off if all are off
         elif all(x.state == HVACMode.OFF for x in states):
-            self._attr_preset_mode = HVACMode.OFF
+            self._attr_hvac_mode = HVACMode.OFF
+            # self._attr_preset_mode = HVACMode.OFF
         # else it's none
         else:
             self._attr_hvac_mode = None
 
         # return the most common action if it is not off
-        hvac_actions = list(find_state_attributes(states, ATTR_HVAC_ACTION))
-        current_hvac_actions = [a for a in hvac_actions if a != HVACAction.OFF]
-        # return the most common action if it is not off
-        if current_hvac_actions:
-            self._attr_hvac_action = max(set(current_hvac_actions), key=current_hvac_actions.count)
-        # return action off if all are off
-        elif all(a == HVACAction.OFF for a in hvac_actions):
-            self._attr_hvac_action = HVACAction.OFF
-        # else it's none
-        else:
-            self._attr_hvac_action = None
+        # hvac_actions = list(find_state_attributes(states, ATTR_HVAC_ACTION))
+        # current_hvac_actions = [a for a in hvac_actions if a != HVACAction.OFF]
+        # # return the most common action if it is not off
+        # if current_hvac_actions:
+        #     self._attr_hvac_action = max(set(current_hvac_actions), key=current_hvac_actions.count)
+        # # return action off if all are off
+        # elif all(a == HVACAction.OFF for a in hvac_actions):
+        #     self._attr_hvac_action = HVACAction.OFF
+        # # else it's none
+        # else:
+        #     self._attr_hvac_action = None
 
         # available swing modes
         all_swing_modes = list(find_state_attributes(states, ATTR_SWING_MODES))
