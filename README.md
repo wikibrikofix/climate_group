@@ -1,35 +1,40 @@
-# climate_group
+# Home Assistant Climate Group
 
-STATUS: [workaround]
-+ forked from @daenny (https://github.com/daenny/climate_group)
-+ made some changes to make it work for me, as there was a problem with Home Assistant core 2024.1.0
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+
+### Groups multiple climate devices to a single entity
+
+Inspired/copied from Home Assistant component ["Light group"](https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/group/light.py)
 
 
-Home Assistant Climate Group
+## Changelog 
 
-Groups multiple climate devices to a single entity. Useful if you have for instance multiple radiator thermostats in a room and want to control them all together.
-Inspired/copied from light_group component (https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/group/light.py)
+### 1.0.1
+- Forked from [@daenny]((https://github.com/bjrnptrsn/climate_group)) based on 1.0.0-rc6
+- Patched for Home Assistant core 2024.1.0
+
+### 1.0.2
+- Minor changes to the behaviour of the states: HVACAction, HVACMode, HVACPresetMode
+
 
 ## How to install:
 
 ### HACS
-Add this repo (https://github.com/bjrnptrsn/climate_group) to the HACS store and install from there.
+Add this repo **https://github.com/bjrnptrsn/climate_group** to the HACS store and install from there.
 
-### local install
-Put in "custom_components" folder located in hass.io inside the config folder.
-(The 2 .py file must be config/custom_components/climate_group)
-
-
+### Local installation
+Copy both .py files to folder: ***config/custom_components/climate_group***
 
 ## Sample Configuration
 
-Put this inside configuration.yaml in config folder of hass.io
+Put this inside ***configuration.yaml*** in config folder of hass.io
 
 ```yaml
 climate:
   - platform: climate_group
     name: 'Climate Friendly Name'
-    temperature_unit: C  # default to celsius, 'C' or 'F'
+    temperature_unit: C   # optional: 'C' or 'F'  [default: 'C']
+    unique_id: [UUID]     # optional: any UUID    [default: None]
     entities:
     - climate.clima1
     - climate.clima2
@@ -37,5 +42,3 @@ climate:
     - climate.heater
     - climate.termostate
 ```
-
-(use the entities you want to have in your climate_group)
