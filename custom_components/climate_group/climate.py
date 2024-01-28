@@ -45,6 +45,7 @@ from homeassistant.const import (
     CONF_TEMPERATURE_UNIT,
     CONF_UNIQUE_ID,
     STATE_UNAVAILABLE,
+    STATE_UNKNOWN
 )
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv, entity_registry as er
@@ -194,6 +195,9 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         ]
         self._attr_assumed_state |= not states_equal(states)
 
+        invalid_states = {STATE_UNAVAILABLE, STATE_UNKNOWN}
+        filtered_states = list(filter(lambda state: state.state not in invalid_states, states))
+
         # Set group as unavailable if all members are unavailable or missing
         self._attr_available = any(state.state != STATE_UNAVAILABLE for state in states)
 
@@ -227,28 +231,28 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             # Merge all effects from all effect_lists with a union merge.
             self._attr_hvac_modes = list(set().union(*all_hvac_modes))
 
-        current_hvac_modes = [x.state for x in states if (x.state != HVACMode.OFF) and (x.state != 'unknown')]
-        # return the most common hvac mode (what the thermostat is set to do) except OFF
+        current_hvac_modes = [x.state for x in filtered_states if (x.state != HVACMode.OFF)]
+        # return the most common HVAC mode (what the thermostat is set to do) if state not invalid
         if current_hvac_modes:
             self._attr_hvac_mode = max(set(current_hvac_modes), key=current_hvac_modes.count)
-        # return off if all are off
-        elif all(x.state == HVACMode.OFF for x in states):
+        # return HVACMode.OFF if all modes are set to off
+        elif all(x.state == HVACMode.OFF for x in filtered_states):
             self._attr_hvac_mode = HVACMode.OFF
-        # else it's none
+        # else it's invalid
         else:
             self._attr_hvac_mode = None
 
-        # return the most common action if it is not off
+        # return the most common action if it is not None
         hvac_actions = list(find_state_attributes(states, ATTR_HVAC_ACTION))
         if hvac_actions:
             current_hvac_actions = [a for a in hvac_actions if a != HVACAction.OFF]
             # return the most common action if it is not off
             if current_hvac_actions:
                 self._attr_hvac_action = max(set(current_hvac_actions), key=current_hvac_actions.count)
-            # return action off if all are off
+            # return HVACAction.OFF if all actions are set to off
             elif all(a == HVACAction.OFF for a in hvac_actions):
                 self._attr_hvac_action = HVACAction.OFF
-        # else it's none
+        # else it's None
         else:
             self._attr_hvac_action = None
 
