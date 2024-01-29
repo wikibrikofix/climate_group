@@ -9,12 +9,15 @@ Inspired/copied from Home Assistant component ["Light group"](https://github.com
 
 ## Changelog 
 
-### 1.0.1
-- Forked from [@daenny]((https://github.com/bjrnptrsn/climate_group)) based on 1.0.0-rc6
-- Patched for Home Assistant core 2024.1.0
+### 1.0.3
+- New option: Change target temperature decimal accuracy to .5
 
 ### 1.0.2
 - Minor changes to the behaviour of the states: HVACAction, HVACMode, HVACPresetMode
+
+### 1.0.1
+- Forked from [@daenny]((https://github.com/bjrnptrsn/climate_group)) based on 1.0.0-rc6
+- Patched for Home Assistant core 2024.1.0
 
 
 ## How to install:
@@ -33,12 +36,13 @@ Put this inside ***configuration.yaml*** in config folder of hass.io
 climate:
   - platform: climate_group
     name: 'Climate Friendly Name'
-    temperature_unit: C   # optional: 'C' or 'F'  [default: 'C']
-    unique_id: [UUID]     # optional: any UUID    [default: None]
+    temperature_unit: C             # optional: C / F        [default: C]
+    decimal_accuracy_to_half: True  # optional: True / False [default: False]
+    unique_id: [UUID]               # optional: any UUID     [default: None]
     entities:
-    - climate.clima1
-    - climate.clima2
-    - climate.clima3
-    - climate.heater
-    - climate.termostate
+      - climate.clima1
+      - climate.clima2
+      - climate.clima3
+      - climate.heater
+      - climate.termostate
 ```
