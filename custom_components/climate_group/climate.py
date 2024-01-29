@@ -64,6 +64,7 @@ from homeassistant.components.group.util import (
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_NAME = "Climate Group"
+DECIMAL_ACCURACY_TO_HALF = "decimal_accuracy_to_half"
 
 # No limit on parallel updates to enable a group calling another group
 PARALLEL_UPDATES = 0
@@ -73,6 +74,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
         vol.Optional(CONF_UNIQUE_ID): cv.string,
         vol.Optional(CONF_TEMPERATURE_UNIT): cv.temperature_unit,
+        vol.Optional(DECIMAL_ACCURACY_TO_HALF, default=False): cv.boolean,
         vol.Required(CONF_ENTITIES): cv.entities_domain(DOMAIN),
     }
 )
@@ -84,6 +86,18 @@ SUPPORT_FLAGS = (
     | ClimateEntityFeature.SWING_MODE
     | ClimateEntityFeature.FAN_MODE
 )
+
+def round_decimal_accuracy(
+    value: float,
+    fraction: int = 10,
+    precision: int = 1,
+) -> float:
+    """Round the decimal part of a float to an fractional value with a certain precision."""
+    fraction = max(min(fraction, 10), 1)
+    precision = max(min(precision, 3), 1)
+    
+    return round(round(value * fraction) / fraction, precision)
+
 
 async def async_setup_platform(
     hass: HomeAssistant,
@@ -99,6 +113,7 @@ async def async_setup_platform(
                 config[CONF_NAME],
                 config[CONF_ENTITIES],
                 config.get(CONF_TEMPERATURE_UNIT, hass.config.units.temperature_unit),
+                config.get(DECIMAL_ACCURACY_TO_HALF),
             )
         ]
     )
@@ -124,6 +139,7 @@ async def async_setup_entry(
                 config_entry.options.get(
                     CONF_TEMPERATURE_UNIT, hass.config.units.temperature_unit
                 ),
+                config_entry.options.get(DECIMAL_ACCURACY_TO_HALF),
             )
         ]
     )
@@ -141,6 +157,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         name: str,
         entity_ids: list[str],
         temperature_unit: str,
+        decimal_accuracy_to_half: bool,
     ) -> None:
         """Initialize a climate group."""
         self._entity_ids = entity_ids
@@ -165,6 +182,9 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         self._attr_preset_modes = None
         self._attr_preset_mode = None
+        
+        self.decimal_accuracy_to_half = decimal_accuracy_to_half
+
 
     async def async_added_to_hass(self) -> None:
         """Register callbacks."""
@@ -204,8 +224,15 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         # Temperature settings
         self._attr_target_temperature = reduce_attribute(
             states, ATTR_TEMPERATURE, reduce=lambda *data: mean(data)
-        )
-
+        )        
+        if self.decimal_accuracy_to_half and self._attr_target_temperature is not None:
+            """Round decimal accuracy of target temperature to .5"""
+            self._attr_target_temperature = round_decimal_accuracy(
+                value = self._attr_target_temperature,
+                fraction = 2,
+                precision = 1
+            )
+            
         self._attr_target_temperature_step = reduce_attribute(
             states, ATTR_TARGET_TEMP_STEP, reduce=max
         )
