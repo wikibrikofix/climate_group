@@ -384,3 +384,10 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             blocking=True,
             context=self._context,
         )
+
+    async def async_toggle(self) -> None:
+        """Toggle the entity."""
+        if self.hvac_mode == HVACMode.OFF:
+            await self.async_turn_on()
+        else:
+            await self.async_turn_off()
