@@ -7,7 +7,10 @@
 Inspired/copied from Home Assistant component ["Light group"](https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/group/light.py)
 
 
-## Changelog 
+## Changelog
+
+### 1.0.4
+- Support for new service call `climate.toggle`
 
 ### 1.0.3
 - New option: Change target temperature decimal accuracy to .5
