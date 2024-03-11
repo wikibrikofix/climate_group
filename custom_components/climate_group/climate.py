@@ -85,6 +85,8 @@ SUPPORT_FLAGS = (
     | ClimateEntityFeature.PRESET_MODE
     | ClimateEntityFeature.SWING_MODE
     | ClimateEntityFeature.FAN_MODE
+    | ClimateEntityFeature.TURN_ON
+    | ClimateEntityFeature.TURN_OFF
 )
 
 def round_decimal_accuracy(
