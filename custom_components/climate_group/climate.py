@@ -1,12 +1,9 @@
 """This platform allows several climate devices to be grouped into one climate device."""
 from __future__ import annotations
-
 import logging
 from statistics import mean
 from typing import Any
-
 import voluptuous as vol
-
 from homeassistant.components.climate import (
     ATTR_CURRENT_TEMPERATURE,
     ATTR_FAN_MODE,
@@ -52,7 +49,6 @@ from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-
 from homeassistant.components.group import GroupEntity
 from homeassistant.components.group.util import (
     find_state_attributes,
@@ -69,44 +65,43 @@ DECIMAL_ACCURACY_TO_HALF = "decimal_accuracy_to_half"
 # No limit on parallel updates to enable a group calling another group
 PARALLEL_UPDATES = 0
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional(CONF_UNIQUE_ID): cv.string,
-        vol.Optional(CONF_TEMPERATURE_UNIT): cv.temperature_unit,
-        vol.Optional(DECIMAL_ACCURACY_TO_HALF, default=False): cv.boolean,
-        vol.Required(CONF_ENTITIES): cv.entities_domain(DOMAIN),
-    }
-)
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+    vol.Optional(CONF_UNIQUE_ID): cv.string,
+    vol.Optional(CONF_TEMPERATURE_UNIT): cv.temperature_unit,
+    vol.Optional(DECIMAL_ACCURACY_TO_HALF, default=False): cv.boolean,
+    vol.Required(CONF_ENTITIES): cv.entities_domain(DOMAIN),
+})
+
 # edit the supported_flags
-SUPPORT_FLAGS = (
-    ClimateEntityFeature.TARGET_TEMPERATURE
-    | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
-    | ClimateEntityFeature.PRESET_MODE
-    | ClimateEntityFeature.SWING_MODE
-    | ClimateEntityFeature.FAN_MODE
-    | ClimateEntityFeature.TURN_ON
-    | ClimateEntityFeature.TURN_OFF
-)
+SUPPORT_FLAGS = (ClimateEntityFeature.TARGET_TEMPERATURE
+                 | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+                 | ClimateEntityFeature.PRESET_MODE
+                 | ClimateEntityFeature.SWING_MODE
+                 | ClimateEntityFeature.FAN_MODE
+                 | ClimateEntityFeature.TURN_ON
+                 | ClimateEntityFeature.TURN_OFF
+                 )
 
 def round_decimal_accuracy(
     value: float,
     fraction: int = 10,
     precision: int = 1,
-) -> float:
+    ) -> float:
+    
     """Round the decimal part of a float to an fractional value with a certain precision."""
     fraction = max(min(fraction, 10), 1)
     precision = max(min(precision, 3), 1)
     
     return round(round(value * fraction) / fraction, precision)
 
-
 async def async_setup_platform(
     hass: HomeAssistant,
     config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,
-) -> None:
+    ) -> None:
+    
     """Initialize climate.group platform."""
     async_add_entities(
         [
@@ -120,12 +115,12 @@ async def async_setup_platform(
         ]
     )
 
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-) -> None:
+    ) -> None:
+    
     """Initialize Climate Group config entry."""
     registry = er.async_get(hass)
     entities = er.async_validate_entity_ids(
@@ -146,21 +141,20 @@ async def async_setup_entry(
         ]
     )
 
-
 class ClimateGroup(GroupEntity, ClimateEntity):
     """Representation of a climate group."""
 
     _attr_available: bool = False
     _attr_assumed_state: bool = True
 
-    def __init__(
-        self,
-        unique_id: str | None,
-        name: str,
-        entity_ids: list[str],
-        temperature_unit: str,
-        decimal_accuracy_to_half: bool,
-    ) -> None:
+    def __init__(self,
+                 unique_id: str | None,
+                 name: str,
+                 entity_ids: list[str],
+                 temperature_unit: str,
+                 decimal_accuracy_to_half: bool,
+                 ) -> None:
+        
         """Initialize a climate group."""
         self._entity_ids = entity_ids
 
@@ -217,7 +211,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         ]
         self._attr_assumed_state |= not states_equal(states)
 
-        invalid_states = {STATE_UNAVAILABLE, STATE_UNKNOWN}
+        invalid_states = [STATE_UNAVAILABLE, STATE_UNKNOWN]
         filtered_states = list(filter(lambda state: state.state not in invalid_states, states))
 
         # Set group as unavailable if all members are unavailable or missing
@@ -260,8 +254,8 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             # Merge all effects from all effect_lists with a union merge.
             self._attr_hvac_modes = list(set().union(*all_hvac_modes))
 
-        current_hvac_modes = [x.state for x in filtered_states if (x.state != HVACMode.OFF)]
         # return the most common HVAC mode (what the thermostat is set to do) if state not invalid
+        current_hvac_modes = [x.state for x in filtered_states if (x.state != HVACMode.OFF)]
         if current_hvac_modes:
             self._attr_hvac_mode = max(set(current_hvac_modes), key=current_hvac_modes.count)
         # return HVACMode.OFF if all modes are set to off
@@ -384,10 +378,3 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             blocking=True,
             context=self._context,
         )
-
-    async def async_toggle(self) -> None:
-        """Toggle the entity."""
-        if self.hvac_mode == HVACMode.OFF:
-            await self.async_turn_on()
-        else:
-            await self.async_turn_off()
