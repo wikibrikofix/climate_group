@@ -9,6 +9,9 @@ Inspired/copied from Home Assistant component ["Light group"](https://github.com
 
 ## Changelog
 
+### 1.0.5
+- Patched for Home Assistant core 2024.4.0 (thanks to @lweberru)
+
 ### 1.0.4
 - Support for new service call `climate.toggle`
 
@@ -21,6 +24,7 @@ Inspired/copied from Home Assistant component ["Light group"](https://github.com
 ### 1.0.1
 - Forked from [@daenny]((https://github.com/bjrnptrsn/climate_group)) based on 1.0.0-rc6
 - Patched for Home Assistant core 2024.1.0
+
 
 
 ## How to install:
