@@ -82,8 +82,8 @@ SUPPORT_FLAGS = (
     | ClimateEntityFeature.PRESET_MODE
     | ClimateEntityFeature.SWING_MODE
     | ClimateEntityFeature.FAN_MODE
-    | ClimateEntityFeature.TURN_ON
     | ClimateEntityFeature.TURN_OFF
+    | ClimateEntityFeature.TURN_ON
 )
 
 def round_decimal_accuracy(
@@ -169,7 +169,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         self._attr_temperature_unit = temperature_unit
 
         # Set some defaults (will be overwritten on update)
-        self._attr_supported_features = 0
+        self._attr_supported_features = ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
         self._attr_hvac_modes = [HVACMode.OFF]
         self._attr_hvac_mode = None
         self._attr_hvac_action = None
