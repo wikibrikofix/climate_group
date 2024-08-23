@@ -9,6 +9,9 @@ Inspired/copied from Home Assistant component ["Light group"](https://github.com
 
 ## Changelog
 
+### 1.0.6
+- Added support for Home Assistant Core Integration Generic turn on and off (thanks to @ladzar)
+
 ### 1.0.5
 - Patched for Home Assistant core 2024.4.0 (thanks to @lweberru)
 
