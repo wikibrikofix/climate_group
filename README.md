@@ -9,6 +9,9 @@ Inspired/copied from Home Assistant component ["Light group"](https://github.com
 
 ## Changelog
 
+### 1.0.7
+- Changed behaviour for Action 'turn on': Use the most common HVAC mode
+
 ### 1.0.6
 - Added support for Home Assistant Core Integration Generic turn on and off (thanks to @ladzar)
 
