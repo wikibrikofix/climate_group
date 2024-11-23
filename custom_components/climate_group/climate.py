@@ -65,6 +65,8 @@ DECIMAL_ACCURACY_TO_HALF = "decimal_accuracy_to_half"
 # No limit on parallel updates to enable a group calling another group
 PARALLEL_UPDATES = 0
 
+CONF_OFFSETS = "offsets"
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
@@ -72,8 +74,12 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_TEMPERATURE_UNIT): cv.temperature_unit,
         vol.Optional(DECIMAL_ACCURACY_TO_HALF, default=False): cv.boolean,
         vol.Required(CONF_ENTITIES): cv.entities_domain(DOMAIN),
+        vol.Optional(CONF_OFFSETS, default={}): vol.Schema(
+            {cv.entity_id: vol.Coerce(float)}
+        ),
     }
 )
+
 
 # edit the supported_flags
 SUPPORT_FLAGS = (
@@ -114,6 +120,7 @@ async def async_setup_platform(
                 config[CONF_ENTITIES],
                 config.get(CONF_TEMPERATURE_UNIT, hass.config.units.temperature_unit),
                 config.get(DECIMAL_ACCURACY_TO_HALF),
+                config.get(CONF_OFFSETS, {}),
             )
         ]
     )
@@ -158,10 +165,12 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         entity_ids: list[str],
         temperature_unit: str,
         decimal_accuracy_to_half: bool,
+        offsets: dict[str, float],  
         ) -> None:
         
         """Initialize a climate group."""
         self._entity_ids = entity_ids
+        self._offsets = offsets 
 
         self._attr_name = name
         self._attr_unique_id = unique_id
@@ -228,8 +237,10 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         # Temperature settings
         self._attr_target_temperature = reduce_attribute(
-            states, ATTR_TEMPERATURE, reduce=lambda *data: mean(data)
-        )        
+            states, ATTR_TEMPERATURE, 
+            reduce=lambda *data: mean(temp - self._offsets.get(entity_id, 0) for temp, entity_id in zip(data, self._entity_ids))
+        )
+
         if self._decimal_accuracy_to_half and self._attr_target_temperature is not None:
             """Round decimal accuracy of target temperature to .5"""
             self._attr_target_temperature = round_decimal_accuracy(
@@ -248,6 +259,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         self._attr_target_temperature_high = reduce_attribute(
             states, ATTR_TARGET_TEMP_HIGH, reduce=lambda *data: mean(data)
         )
+
 
         self._attr_current_temperature = reduce_attribute(
             states, ATTR_CURRENT_TEMPERATURE, reduce=lambda *data: mean(data)
@@ -355,27 +367,24 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         else:
             _LOGGER.warning(f"Can't turn off: hvac mode 'off' not available, {self._logger_data}")
 
-    async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Forward the set_temperature command to all climate in the climate group."""
-        data = {ATTR_ENTITY_ID: self._entity_ids}
+ async def async_set_temperature(self, **kwargs: Any) -> None:
+    """Forward the set_temperature command to all climate in the climate group."""
+    if ATTR_TEMPERATURE in kwargs:
+        target_temperature = kwargs[ATTR_TEMPERATURE]
+        for entity_id in self._entity_ids:
+            offset = self._offsets.get(entity_id, 0)  # Offset für diese Entität
+            adjusted_temperature = target_temperature + offset
+            data = {
+                ATTR_ENTITY_ID: entity_id,
+                ATTR_TEMPERATURE: adjusted_temperature,
+            }
+            _LOGGER.info(f"Setting temperature for {entity_id} with offset {offset}: {data}")
+            await self.hass.services.async_call(
+                DOMAIN, SERVICE_SET_TEMPERATURE, data, blocking=True, context=self._context
+            )
 
-        if ATTR_HVAC_MODE in kwargs:
-            await self.async_set_hvac_mode(kwargs[ATTR_HVAC_MODE])
 
-        if ATTR_TEMPERATURE in kwargs:
-            data[ATTR_TEMPERATURE] = kwargs[ATTR_TEMPERATURE]
-        if ATTR_TARGET_TEMP_LOW in kwargs:
-            data[ATTR_TARGET_TEMP_LOW] = kwargs[ATTR_TARGET_TEMP_LOW]
-        if ATTR_TARGET_TEMP_HIGH in kwargs:
-            data[ATTR_TARGET_TEMP_HIGH] = kwargs[ATTR_TARGET_TEMP_HIGH]
-
-        _LOGGER.info("Setting temperature: %s", data)
-
-        await self.hass.services.async_call(
-            DOMAIN, SERVICE_SET_TEMPERATURE, data, blocking=True, context=self._context
-        )
-
-    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+   async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Forward the set_hvac_mode command to all climate in the climate group."""
         data = {ATTR_ENTITY_ID: self._entity_ids, ATTR_HVAC_MODE: hvac_mode}
         _LOGGER.info("Setting hvac mode: %s", data)
