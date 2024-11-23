@@ -9,6 +9,15 @@ Inspired/copied from Home Assistant component ["Light group"](https://github.com
 
 ## Changelog
 
+
+
+    bjrnptrsn
+    /
+    climate_group
+
+### 1.0.8
+- Forked from @bjrnptrsn to add new features
+
 ### 1.0.7
 - Changed behaviour for Action 'turn on': Use the most common HVAC mode
 
