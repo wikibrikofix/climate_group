@@ -257,26 +257,11 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         if self._decimal_accuracy_to_half and self._attr_target_temperature is not None:
             """Round decimal accuracy of target temperature to .5"""
-            # Runde die Zieltemperatur der Gruppen-Entity auf .5
-            rounded_temperature = round_decimal_accuracy(
+            self._attr_target_temperature = round_decimal_accuracy(
                 value=self._attr_target_temperature,
                 fraction=2,
                 precision=1
             )
-
-            # Setze die gerundete Zieltemperatur für alle Thermostate
-            self._attr_target_temperature = rounded_temperature
-
-            # Jetzt für alle Thermostate in der Gruppe die gerundete Temperatur setzen
-            for entity_id in self._entity_ids:
-                offset = self._offsets.get(entity_id, 0)  # Offset für jedes Thermostat berücksichtigen
-                adjusted_temperature = rounded_temperature + offset  # Angewandter Offset
-                data = {
-                    ATTR_ENTITY_ID: entity_id,
-                    ATTR_TEMPERATURE: adjusted_temperature,
-                }
-                _LOGGER.info(f"Setting temperature for {entity_id} to {adjusted_temperature} (rounded value)")
-
 
         self._attr_target_temperature_step = reduce_attribute(
             states, ATTR_TARGET_TEMP_STEP, reduce=max
