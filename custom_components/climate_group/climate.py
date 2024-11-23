@@ -121,6 +121,7 @@ async def async_setup_platform(
                 config.get(CONF_TEMPERATURE_UNIT, hass.config.units.temperature_unit),
                 config.get(DECIMAL_ACCURACY_TO_HALF),
                 config.get(CONF_OFFSETS, {}),
+                custom_entity=config.get('custom_entity', None)  # Pass the custom entity here
             )
         ]
     )
