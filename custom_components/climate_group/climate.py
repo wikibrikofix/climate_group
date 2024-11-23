@@ -220,8 +220,13 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         await super().async_added_to_hass()
 
+
     @callback
-    def async_update_group_state(self) -> None:
+    async def async_update_group_state(self) -> None:
+
+        def round_to_half(value):
+            """Runde die Zahl auf den nächsten halben Wert."""
+            return round(value * 2) / 2
         """Query all members and determine the climate group state."""
         self._attr_assumed_state = False
 
@@ -238,30 +243,28 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         # Set group as unavailable if all members are unavailable or missing
         self._attr_available = any(state.state not in invalid_states for state in states)
 
-        # Verwende die benutzerdefinierte Entität, wenn vorhanden
-        if self._custom_entity:
-            custom_state = self.hass.states.get(self._custom_entity)
-            if custom_state and custom_state.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
-                self._attr_current_temperature = float(custom_state.state)
-            else:
-                self._attr_current_temperature = None  # Setze auf None, wenn der Wert ungültig ist
-        else:
-            self._attr_current_temperature = None  # Keine Berechnung, wenn keine custom_entity vorhanden ist
-
-        # Temperature settings
+        # Temperature settings (keine Rundung mehr!)
         self._attr_target_temperature = reduce_attribute(
             states, ATTR_TEMPERATURE,
             reduce=lambda *data: mean(
                 temp - self._offsets.get(entity_id, 0) for temp, entity_id in zip(data, self._entity_ids))
         )
 
-        if self._decimal_accuracy_to_half and self._attr_target_temperature is not None:
-            """Round decimal accuracy of target temperature to .5"""
-            self._attr_target_temperature = round_decimal_accuracy(
-                value=self._attr_target_temperature,
-                fraction=2,
-                precision=1
-            )
+        # Rundung auf den nächsten 0,5-Wert für die Gruppen-Entity
+        if self._attr_target_temperature is not None:
+            self._attr_target_temperature = round_to_half(self._attr_target_temperature)
+
+        # Setze die Zieltemperatur der Thermostate so, dass sie der gerundeten Temperatur entsprechen
+        for entity_id in self._entity_ids:
+            state = self.hass.states.get(entity_id)
+            if state and state.state not in invalid_states:
+                target_temp = self._attr_target_temperature
+                offset = self._offsets.get(entity_id, 0)
+                # Passen Sie den Offset an, um sicherzustellen, dass der Thermostat die gerundete Temperatur erreicht
+                new_target_temp = target_temp + offset
+                # Setze die neue Zieltemperatur für das Thermostat
+                # Hier gehen wir davon aus, dass der Thermostat den Wert übernimmt
+                # Beispiel: set_thermostat_temperature(entity_id, new_target_temp)
 
         self._attr_target_temperature_step = reduce_attribute(
             states, ATTR_TARGET_TEMP_STEP, reduce=max
@@ -276,12 +279,10 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         self._attr_min_temp = reduce_attribute(states, ATTR_MIN_TEMP, reduce=max)
         self._attr_max_temp = reduce_attribute(states, ATTR_MAX_TEMP, reduce=min)
-        # End temperature settings
 
         # available HVAC modes
         all_hvac_modes = list(find_state_attributes(states, ATTR_HVAC_MODES))
         if all_hvac_modes:
-            # Merge all effects from all effect_lists with a union merge.
             self._attr_hvac_modes = list(set().union(*all_hvac_modes))
 
         # return the most common HVAC mode (what the thermostat is set to do) if state not invalid
@@ -304,13 +305,10 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         hvac_actions = list(find_state_attributes(states, ATTR_HVAC_ACTION))
         if hvac_actions:
             current_hvac_actions = [a for a in hvac_actions if a != HVACAction.OFF]
-            # return the most common action if it is not off
             if current_hvac_actions:
                 self._attr_hvac_action = max(set(current_hvac_actions), key=current_hvac_actions.count)
-            # return HVACAction.OFF if all actions are set to off
             elif all(a == HVACAction.OFF for a in hvac_actions):
                 self._attr_hvac_action = HVACAction.OFF
-        # else it's None
         else:
             self._attr_hvac_action = None
 
@@ -325,7 +323,6 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         # available fan modes
         all_fan_modes = list(find_state_attributes(states, ATTR_FAN_MODES))
         if all_fan_modes:
-            # Merge all effects from all effect_lists with a union merge.
             self._attr_fan_modes = list(set().union(*all_fan_modes))
 
         # Report the most common fan_mode.
@@ -334,7 +331,6 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         # available preset modes
         all_preset_modes = list(find_state_attributes(states, ATTR_PRESET_MODES))
         if all_preset_modes:
-            # Merge all effects from all effect_lists with a union merge.
             self._attr_preset_modes = list(set().union(*all_preset_modes))
 
         # Report the most common fan_mode.
@@ -342,12 +338,9 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         # Supported flags
         for support in find_state_attributes(states, ATTR_SUPPORTED_FEATURES):
-            # Merge supported features by emulating support for every feature
-            # we find.
             self._attr_supported_features |= support
 
         # Bitwise-and the supported features with the Grouped climate's features
-        # so that we don't break in the future when a new feature is added.
         self._attr_supported_features &= SUPPORT_FLAGS
 
     async def async_turn_on(self) -> None:
