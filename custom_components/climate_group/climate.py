@@ -77,7 +77,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_OFFSETS, default={}): vol.Schema(
             {cv.entity_id: vol.Coerce(float)}
         ),
-        vol.Optional("custom_entity"): cv.entity_id,  # Füge das für die benutzerdefinierte Entität hinzu
+        vol.Required("custom_entity"): cv.entity_id,  # custom_entity als Pflichtfeld
     }
 )
 
@@ -121,7 +121,7 @@ async def async_setup_platform(
                 config.get(CONF_TEMPERATURE_UNIT, hass.config.units.temperature_unit),
                 config.get(DECIMAL_ACCURACY_TO_HALF),
                 config.get(CONF_OFFSETS, {}),
-                custom_entity=config.get('custom_entity', None)  # Pass the custom entity here
+                config["custom_entity"],  # Pass the custom entity here
             )
         ]
     )
@@ -168,7 +168,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             temperature_unit: str,
             decimal_accuracy_to_half: bool,
             offsets: dict[str, float],
-            custom_entity: str | None,  # Füge das hinzu
+            custom_entity: str,  # custom_entity als Pflichtfeld  # Füge das hinzu
     ) -> None:
 
         """Initialize a climate group."""
@@ -185,7 +185,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         self._logger_data = {ATTR_ENTITY_ID: entity_ids}
 
-        self._custom_entity = custom_entity  # Speichere die benutzerdefinierte Entität
+        self._custom_entity = custom_entity
 
         # Set some defaults (will be overwritten on update)
         self._attr_supported_features = ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
@@ -244,7 +244,9 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             if custom_state and custom_state.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
                 self._attr_current_temperature = float(custom_state.state)
             else:
-                self._attr_current_temperature = None  # Fallback, wenn der Wert ungültig ist
+                # Kein Fallback mehr! Fehler wenn ungültig
+                _LOGGER.error(f"Invalid state for custom_entity '{self._custom_entity}', skipping...")
+                self._attr_current_temperature = None  # Optional: Setze None oder lösche das Attribut
         else:
             # Wenn keine benutzerdefinierte Entität angegeben ist, berechne den Durchschnitt wie zuvor
             self._attr_current_temperature = reduce_attribute(
