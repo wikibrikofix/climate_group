@@ -244,14 +244,9 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             if custom_state and custom_state.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
                 self._attr_current_temperature = float(custom_state.state)
             else:
-                # Kein Fallback mehr! Fehler wenn ungültig
-                _LOGGER.error(f"Invalid state for custom_entity '{self._custom_entity}', skipping...")
-                self._attr_current_temperature = None  # Optional: Setze None oder lösche das Attribut
+                self._attr_current_temperature = None  # Setze auf None, wenn der Wert ungültig ist
         else:
-            # Wenn keine benutzerdefinierte Entität angegeben ist, berechne den Durchschnitt wie zuvor
-            self._attr_current_temperature = reduce_attribute(
-                states, ATTR_CURRENT_TEMPERATURE, reduce=lambda *data: mean(data)
-            )
+            self._attr_current_temperature = None  # Keine Berechnung, wenn keine custom_entity vorhanden ist
 
         # Temperature settings
         self._attr_target_temperature = reduce_attribute(
