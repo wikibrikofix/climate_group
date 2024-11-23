@@ -1,4 +1,4 @@
-# Home Assistant Climate Group
+# Home Assistant Climate Group (+Offset!)
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
@@ -36,7 +36,7 @@ Inspired/copied from Home Assistant component ["Light group"](https://github.com
 ## How to install:
 
 ### HACS
-Add this repo **https://github.com/bjrnptrsn/climate_group** to the HACS store and install from there.
+Add this repo **https://github.com/gummiangler/climate_group** to the HACS store and install from there.
 
 ### Local installation
 Copy both .py files to folder: ***config/custom_components/climate_group***
@@ -58,4 +58,8 @@ climate:
       - climate.clima3
       - climate.heater
       - climate.termostate
+    offsets:
+      climate.clima1: 0
+      climate.clima: -2
+      climate.clima3: 2
 ```
