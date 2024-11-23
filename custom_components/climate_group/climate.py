@@ -274,10 +274,6 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             states, ATTR_TARGET_TEMP_HIGH, reduce=lambda *data: mean(data)
         )
 
-        self._attr_current_temperature = reduce_attribute(
-            states, ATTR_CURRENT_TEMPERATURE, reduce=lambda *data: mean(data)
-        )
-
         self._attr_min_temp = reduce_attribute(states, ATTR_MIN_TEMP, reduce=max)
         self._attr_max_temp = reduce_attribute(states, ATTR_MAX_TEMP, reduce=min)
         # End temperature settings
