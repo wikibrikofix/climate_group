@@ -77,6 +77,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_OFFSETS, default={}): vol.Schema(
             {cv.entity_id: vol.Coerce(float)}
         ),
+        vol.Optional("custom_entity"): cv.entity_id,  # Füge das für die benutzerdefinierte Entität hinzu
     }
 )
 
@@ -166,6 +167,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             temperature_unit: str,
             decimal_accuracy_to_half: bool,
             offsets: dict[str, float],
+            custom_entity: str | None,  # Füge das hinzu
     ) -> None:
 
         """Initialize a climate group."""
@@ -181,6 +183,8 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         self._decimal_accuracy_to_half = decimal_accuracy_to_half
 
         self._logger_data = {ATTR_ENTITY_ID: entity_ids}
+
+        self._custom_entity = custom_entity  # Speichere die benutzerdefinierte Entität
 
         # Set some defaults (will be overwritten on update)
         self._attr_supported_features = ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
@@ -232,6 +236,19 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         # Set group as unavailable if all members are unavailable or missing
         self._attr_available = any(state.state not in invalid_states for state in states)
+
+        # Verwende die benutzerdefinierte Entität, wenn vorhanden
+        if self._custom_entity:
+            custom_state = self.hass.states.get(self._custom_entity)
+            if custom_state and custom_state.state not in [STATE_UNAVAILABLE, STATE_UNKNOWN]:
+                self._attr_current_temperature = float(custom_state.state)
+            else:
+                self._attr_current_temperature = None  # Fallback, wenn der Wert ungültig ist
+        else:
+            # Wenn keine benutzerdefinierte Entität angegeben ist, berechne den Durchschnitt wie zuvor
+            self._attr_current_temperature = reduce_attribute(
+                states, ATTR_CURRENT_TEMPERATURE, reduce=lambda *data: mean(data)
+            )
 
         # Temperature settings
         self._attr_target_temperature = reduce_attribute(
@@ -365,7 +382,6 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         else:
             _LOGGER.warning(f"Can't turn off: hvac mode 'off' not available, {self._logger_data}")
 
-
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Forward the set_temperature command to all climate in the climate group."""
         if ATTR_TEMPERATURE in kwargs:
@@ -381,8 +397,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
                 await self.hass.services.async_call(
                     DOMAIN, SERVICE_SET_TEMPERATURE, data, blocking=True, context=self._context
                 )
-    
-    
+
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Forward the set_hvac_mode command to all climate in the climate group."""
         data = {ATTR_ENTITY_ID: self._entity_ids, ATTR_HVAC_MODE: hvac_mode}
@@ -390,8 +405,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         await self.hass.services.async_call(
             DOMAIN, SERVICE_SET_HVAC_MODE, data, blocking=True, context=self._context
         )
-    
-    
+
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Forward the set_fan_mode to all climate in the climate group."""
         data = {ATTR_ENTITY_ID: self._entity_ids, ATTR_FAN_MODE: fan_mode}
@@ -399,8 +413,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
         await self.hass.services.async_call(
             DOMAIN, SERVICE_SET_FAN_MODE, data, blocking=True, context=self._context
         )
-    
-    
+
     async def async_set_swing_mode(self, swing_mode: str) -> None:
         """Forward the set_swing_mode to all climate in the climate group."""
         data = {ATTR_ENTITY_ID: self._entity_ids, ATTR_SWING_MODE: swing_mode}
@@ -412,8 +425,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
             blocking=True,
             context=self._context,
         )
-    
-    
+
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Forward the set_preset_mode to all climate in the climate group."""
         data = {ATTR_ENTITY_ID: self._entity_ids, ATTR_PRESET_MODE: preset_mode}
