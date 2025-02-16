@@ -83,34 +83,33 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 # edit the supported_flags
 SUPPORT_FLAGS = (
-        ClimateEntityFeature.TARGET_TEMPERATURE
-        | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
-        | ClimateEntityFeature.PRESET_MODE
-        | ClimateEntityFeature.SWING_MODE
-        | ClimateEntityFeature.FAN_MODE
-        | ClimateEntityFeature.TURN_ON
-        | ClimateEntityFeature.TURN_OFF
+    ClimateEntityFeature.TARGET_TEMPERATURE
+    | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+    | ClimateEntityFeature.PRESET_MODE
+    | ClimateEntityFeature.SWING_MODE
+    | ClimateEntityFeature.FAN_MODE
+    | ClimateEntityFeature.TURN_ON
+    | ClimateEntityFeature.TURN_OFF
 )
 
-
 def round_decimal_accuracy(
-        value: float,
-        fraction: int = 10,
-        precision: int = 1,
-) -> float:
+    value: float,
+    fraction: int = 10,
+    precision: int = 1,
+    ) -> float:
+
     """Round the decimal part of a float to an fractional value with a certain precision."""
     fraction = max(min(fraction, 10), 1)
     precision = max(min(precision, 3), 1)
 
     return round(round(value * fraction) / fraction, precision)
 
-
 async def async_setup_platform(
-        hass: HomeAssistant,
-        config: ConfigType,
-        async_add_entities: AddEntitiesCallback,
-        discovery_info: DiscoveryInfoType | None = None,
-) -> None:
+    hass: HomeAssistant,
+    config: ConfigType,
+    async_add_entities: AddEntitiesCallback,
+    discovery_info: DiscoveryInfoType | None = None,
+    ) -> None:
     """Initialize climate.group platform."""
     async_add_entities(
         [
@@ -126,12 +125,12 @@ async def async_setup_platform(
         ]
     )
 
-
 async def async_setup_entry(
-        hass: HomeAssistant,
-        config_entry: ConfigEntry,
-        async_add_entities: AddEntitiesCallback,
-) -> None:
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+    ) -> None:
+
     """Initialize Climate Group config entry."""
     registry = er.async_get(hass)
     entities = er.async_validate_entity_ids(
@@ -152,24 +151,23 @@ async def async_setup_entry(
         ]
     )
 
-
 class ClimateGroup(GroupEntity, ClimateEntity):
     """Representation of a climate group."""
 
     _attr_available: bool = False
     _attr_assumed_state: bool = True
-    _enable_turn_on_off_backwards_compatibility: bool = False
+    _enable_turn_on_off_backwards_compatibility : bool = False
 
     def __init__(
-            self,
-            unique_id: str | None,
-            name: str,
-            entity_ids: list[str],
-            temperature_unit: str,
-            decimal_accuracy_to_half: bool,
-            offsets: dict[str, float],
-            custom_entity: str,  # custom_entity als Pflichtfeld  # Füge das hinzu
-    ) -> None:
+        self,
+        unique_id: str | None,
+        name: str,
+        entity_ids: list[str],
+        temperature_unit: str,
+        decimal_accuracy_to_half: bool,
+        offsets: dict[str, float],
+        custom_entity: str,  # custom_entity als Pflichtfeld  # Füge das hinzu
+        ) -> None:
 
         """Initialize a climate group."""
         self._entity_ids = entity_ids
@@ -202,6 +200,7 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         self._attr_preset_modes = None
         self._attr_preset_mode = None
+
 
     async def async_added_to_hass(self) -> None:
         """Register callbacks."""
@@ -250,17 +249,14 @@ class ClimateGroup(GroupEntity, ClimateEntity):
 
         # Temperature settings
         self._attr_target_temperature = reduce_attribute(
-            states, ATTR_TEMPERATURE,
-            reduce=lambda *data: mean(
-                temp - self._offsets.get(entity_id, 0) for temp, entity_id in zip(data, self._entity_ids))
-        )
-
+            states, ATTR_TEMPERATURE, reduce=lambda *data: mean(temp - self._offsets.get(entity_id, 0) for temp, entity_id in zip(data, self._entity_ids))
+        )        
         if self._decimal_accuracy_to_half and self._attr_target_temperature is not None:
             """Round decimal accuracy of target temperature to .5"""
             self._attr_target_temperature = round_decimal_accuracy(
-                value=self._attr_target_temperature,
-                fraction=2,
-                precision=1
+                value = self._attr_target_temperature,
+                fraction = 2,
+                precision = 1
             )
 
         self._attr_target_temperature_step = reduce_attribute(
