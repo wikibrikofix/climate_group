@@ -9,11 +9,10 @@ Inspired/copied from Home Assistant component ["Light group"](https://github.com
 
 ## Changelog
 
+### Wikibrikofix
+    aligned the code to the original project
 
-
-    bjrnptrsn
-    /
-    climate_group
+### fork of bjrnptrsn/climate_group
 
 ### 1.0.8
 - Forked from @bjrnptrsn to add new features
@@ -57,6 +56,7 @@ Put this inside ***configuration.yaml*** in config folder of hass.io
 ```yaml
 climate:
   - platform: climate_group
+    custom_entity: 'climate.climate_group enitity_name'
     name: 'Climate Friendly Name'
     temperature_unit: C             # optional: C / F        [default: C]
     decimal_accuracy_to_half: True  # optional: True / False [default: False]
